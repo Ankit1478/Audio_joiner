@@ -1,21 +1,23 @@
-'use client'
+// app/page.js
+'use client';
+
 import React, { useState } from 'react';
 import axios from 'axios';
 
 export default function Home() {
   const [file1, setFile1] = useState(null);
   const [file2, setFile2] = useState(null);
-  const [merging, setMerging] = useState(false);
-  const [error, setError] = useState('');
+  const [processing, setProcessing] = useState(false);
+  const [downloadLink, setDownloadLink] = useState(null);
+  const [error, setError] = useState(null);
 
-  const handleFileChange = (event, setFile) => {
-    const file = event.target.files[0];
-    if (file && file.type.startsWith('audio/')) {
-      setFile(file);
-      setError('');
-    } else {
-      setError('Please select a valid audio file.');
-      setFile(null);
+  const handleFileChange = (event, fileNumber) => {
+    if (event.target.files) {
+      if (fileNumber === 1) {
+        setFile1(event.target.files[0]);
+      } else {
+        setFile2(event.target.files[0]);
+      }
     }
   };
 
@@ -26,66 +28,75 @@ export default function Home() {
       return;
     }
 
-    setMerging(true);
-    setError('');
+    setProcessing(true);
+    setError(null);
+    setDownloadLink(null);
 
     const formData = new FormData();
     formData.append('audio', file1);
     formData.append('audio', file2);
 
     try {
-      const response = await axios.post('http://localhost:5001/mix', formData, {
-        responseType: 'blob',
+      const response = await axios.post('http://localhost:5001/process', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'merged.aac');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      setDownloadLink(`http://localhost:5001/${response.data.file}`);
     } catch (error) {
-      setError('An error occurred while merging the audio files.');
+      setError('An error occurred while processing the audio files.');
       console.error('Error:', error);
     } finally {
-      setMerging(false);
+      setProcessing(false);
     }
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Audio File Merger (AAC)</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="file1" className="block mb-2">Audio File 1:</label>
-          <input
-            type="file"
-            id="file1"
-            accept="audio/*"
-            onChange={(e) => handleFileChange(e, setFile1)}
-            className="border p-2 w-full"
-          />
+    <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
+      <div className="relative py-3 sm:max-w-xl sm:mx-auto">
+        <div className="relative px-4 py-10 bg-white mx-8 md:mx-0 shadow rounded-3xl sm:p-10">
+          <div className="max-w-md mx-auto">
+            <div className="flex items-center space-x-5">
+              <div className="h-14 w-14 bg-yellow-200 rounded-full flex flex-shrink-0 justify-center items-center text-yellow-500 text-2xl font-mono">i</div>
+              <div className="block pl-2 font-semibold text-xl self-start text-gray-700">
+                <h2 className="leading-relaxed">Audio Processing</h2>
+                <p className="text-sm text-gray-500 font-normal leading-relaxed">
+                  Upload two audio files to process and merge. The first file will be repeated 6 times before merging.
+                  The final output will be trimmed to the length of the shortest input.
+                </p>
+              </div>
+            </div>
+            <form onSubmit={handleSubmit} className="divide-y divide-gray-200">
+              <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
+                <div className="flex flex-col">
+                  <label className="leading-loose">First Audio File (to be repeated 6 times)</label>
+                  <input type="file" accept="audio/*" onChange={(e) => handleFileChange(e, 1)} className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600" />
+                </div>
+                <div className="flex flex-col">
+                  <label className="leading-loose">Second Audio File</label>
+                  <input type="file" accept="audio/*" onChange={(e) => handleFileChange(e, 2)} className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600" />
+                </div>
+              </div>
+              <div className="pt-4 flex items-center space-x-4">
+                <button type="submit" disabled={processing} className="bg-blue-500 flex justify-center items-center w-full text-white px-4 py-3 rounded-md focus:outline-none">
+                  {processing ? 'Processing...' : 'Process Audio'}
+                </button>
+              </div>
+            </form>
+            {error && (
+              <div className="mt-4 text-red-500">{error}</div>
+            )}
+            {downloadLink && (
+              <div className="mt-4">
+                <a href={downloadLink} download className="text-blue-500 hover:underline">
+                  Download Processed Audio
+                </a>
+              </div>
+            )}
+          </div>
         </div>
-        <div>
-          <label htmlFor="file2" className="block mb-2">Audio File 2:</label>
-          <input
-            type="file"
-            id="file2"
-            accept="audio/*"
-            onChange={(e) => handleFileChange(e, setFile2)}
-            className="border p-2 w-full"
-          />
-        </div>
-        {error && <p className="text-red-500">{error}</p>}
-        <button
-          type="submit"
-          disabled={merging || !file1 || !file2}
-          className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-400"
-        >
-          {merging ? 'Merging...' : 'Merge Audio Files'}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }
