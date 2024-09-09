@@ -28,18 +28,18 @@ const upload = multer({ dest: uploadsDir });
 
 app.use(express.static(publicDir));
 
-app.post('/merge', upload.array('audio', 2), (req, res) => {
+app.post('/mix', upload.array('audio', 2), (req, res) => {
   if (req.files.length !== 2) {
     return res.status(400).send('Please upload exactly two audio files.');
   }
 
-  const outputPath = path.join(outputDir, 'merged.aac');
+  const outputPath = path.join(outputDir, 'mixed.aac');
 
   ffmpeg()
     .input(req.files[0].path)
     .input(req.files[1].path)
     .complexFilter([
-      '[0:a][1:a]concat=n=2:v=0:a=1[outa]'
+      '[0:a][1:a]amix=inputs=2:duration=longest[outa]'
     ])
     .outputOptions('-map [outa]')
     .outputOptions('-c:a aac')
@@ -47,11 +47,11 @@ app.post('/merge', upload.array('audio', 2), (req, res) => {
     .save(outputPath)
     .on('error', (err) => {
       console.error('An error occurred: ' + err.message);
-      res.status(500).send('Error merging audio files');
+      res.status(500).send('Error mixing audio files');
     })
     .on('end', () => {
-      console.log('Merging finished successfully');
-      res.download(outputPath, 'merged.aac', (err) => {
+      console.log('Mixing finished successfully');
+      res.download(outputPath, 'mixed.aac', (err) => {
         if (err) {
           console.error('Error sending file: ' + err);
         }

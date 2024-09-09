@@ -34,7 +34,7 @@ export default function Home() {
     formData.append('audio', file2);
 
     try {
-      const response = await axios.post('http://localhost:5001/merge', formData, {
+      const response = await axios.post('http://localhost:5001/mix', formData, {
         responseType: 'blob',
       });
 
