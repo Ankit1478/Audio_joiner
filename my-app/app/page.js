@@ -43,12 +43,18 @@ export default function Home() {
         },
       });
 
-      setDownloadLink(`http://localhost:5001/${response.data.file}`);
+      setDownloadLink(`http://localhost:5001${response.data.downloadUrl}`);
     } catch (error) {
       setError('An error occurred while processing the audio files.');
       console.error('Error:', error);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (downloadLink) {
+      window.location.href = downloadLink;
     }
   };
 
@@ -62,15 +68,14 @@ export default function Home() {
               <div className="block pl-2 font-semibold text-xl self-start text-gray-700">
                 <h2 className="leading-relaxed">Audio Processing</h2>
                 <p className="text-sm text-gray-500 font-normal leading-relaxed">
-                  Upload two audio files to process and merge. The first file will be repeated 6 times before merging.
-                  The final output will be trimmed to the length of the shortest input.
+                  Upload two audio files to process and merge.
                 </p>
               </div>
             </div>
             <form onSubmit={handleSubmit} className="divide-y divide-gray-200">
               <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
                 <div className="flex flex-col">
-                  <label className="leading-loose">First Audio File (to be repeated 6 times)</label>
+                  <label className="leading-loose">First Audio File (to be repeated 20 times)</label>
                   <input type="file" accept="audio/*" onChange={(e) => handleFileChange(e, 1)} className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600" />
                 </div>
                 <div className="flex flex-col">
@@ -89,9 +94,9 @@ export default function Home() {
             )}
             {downloadLink && (
               <div className="mt-4">
-                <a href={downloadLink} download className="text-blue-500 hover:underline">
-                  Download Processed Audio
-                </a>
+                <button onClick={handleDownload} className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+                  Download Processed Audio (AAC 128k)
+                </button>
               </div>
             )}
           </div>

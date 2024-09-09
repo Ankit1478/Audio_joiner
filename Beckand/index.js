@@ -32,9 +32,9 @@ app.post('/process', upload.array('audio', 2), (req, res) => {
 
   const firstAudioPath = req.files[0].path;
   const secondAudioPath = req.files[1].path;
-  const loweredVolumePath = path.join(outputDir, `${req.files[0].filename}_lowered.mp3`);
-  const concatenatedPath = path.join(outputDir, `${req.files[0].filename}_concatenated.mp3`);
-  const finalOutputPath = path.join(outputDir, `${req.files[0].filename}_final.mp3`);
+  const loweredVolumePath = path.join(outputDir, `${req.files[0].filename}_lowered.aac`);
+  const concatenatedPath = path.join(outputDir, `${req.files[0].filename}_concatenated.aac`);
+  const finalOutputPath = path.join(publicDir, `${req.files[0].filename}_final.aac`);
 
   // Step 1: Lower the volume of the first audio to 50%
   ffmpeg(firstAudioPath)
@@ -43,11 +43,11 @@ app.post('/process', upload.array('audio', 2), (req, res) => {
     .on('end', () => {
       console.log('Volume lowering finished');
 
-      // Step 2: Concatenate the lowered volume audio 6 times
+      
       ffmpeg(loweredVolumePath)
         .output(concatenatedPath)
         .complexFilter([
-          '[0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a]concat=n=12:v=0:a=1[out]',
+          '[0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a][0:a]concat=n=20:v=0:a=1[out]',
         ], ['out'])
         .on('end', () => {
           console.log('Concatenation finished');
@@ -60,6 +60,8 @@ app.post('/process', upload.array('audio', 2), (req, res) => {
               '[0:a][1:a]amix=inputs=2:duration=shortest:dropout_transition=0[outa]'
             ])
             .outputOptions('-map [outa]')
+            .outputOptions('-c:a aac')
+            .outputOptions('-b:a 128k')
             .save(finalOutputPath)
             .on('error', (err) => {
               console.error('An error occurred: ' + err.message);
@@ -67,7 +69,8 @@ app.post('/process', upload.array('audio', 2), (req, res) => {
             })
             .on('end', () => {
               console.log('Processing finished successfully');
-              res.json({ message: 'Audio processed successfully', file: path.relative(publicDir, finalOutputPath) });
+              const downloadUrl = `/download/${path.basename(finalOutputPath)}`;
+              res.json({ message: 'Audio processed successfully', downloadUrl });
               
               // Clean up intermediate files
               fs.unlinkSync(firstAudioPath);
@@ -90,6 +93,16 @@ app.post('/process', upload.array('audio', 2), (req, res) => {
 
 // Serve files from the public directory
 app.use(express.static(publicDir));
+
+// Add a route for downloading the processed file
+app.get('/download/:filename', (req, res) => {
+  const filePath = path.join(publicDir, req.params.filename);
+  res.download(filePath, (err) => {
+    if (err) {
+      res.status(404).send('File not found');
+    }
+  });
+});
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
