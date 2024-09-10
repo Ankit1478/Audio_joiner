@@ -5,26 +5,26 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 export default function Home() {
-  const [file1, setFile1] = useState(null);
-  const [file2, setFile2] = useState(null);
+  const [backgroundAudio, setBackgroundAudio] = useState(null);
+  const [realAudio, setRealAudio] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [downloadLink, setDownloadLink] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleFileChange = (event, fileNumber) => {
+  const handleFileChange = (event, fileType) => {
     if (event.target.files) {
-      if (fileNumber === 1) {
-        setFile1(event.target.files[0]);
+      if (fileType === 'background') {
+        setBackgroundAudio(event.target.files[0]);
       } else {
-        setFile2(event.target.files[0]);
+        setRealAudio(event.target.files[0]);
       }
     }
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!file1 || !file2) {
-      setError('Please select two audio files.');
+    if (!backgroundAudio || !realAudio) {
+      setError('Please select both background and real audio files.');
       return;
     }
 
@@ -33,8 +33,8 @@ export default function Home() {
     setDownloadLink(null);
 
     const formData = new FormData();
-    formData.append('audio', file1);
-    formData.append('audio', file2);
+    formData.append('audio', backgroundAudio);
+    formData.append('audio', realAudio);
 
     try {
       const response = await axios.post('http://localhost:5001/process', formData, {
@@ -68,23 +68,37 @@ export default function Home() {
               <div className="block pl-2 font-semibold text-xl self-start text-gray-700">
                 <h2 className="leading-relaxed">Audio Processing</h2>
                 <p className="text-sm text-gray-500 font-normal leading-relaxed">
-                  Upload two audio files to process and merge.
+                  Upload background and real audio files to process and merge.
                 </p>
               </div>
             </div>
             <form onSubmit={handleSubmit} className="divide-y divide-gray-200">
               <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
                 <div className="flex flex-col">
-                  <label className="leading-loose">First Audio File (to be repeated 20 times)</label>
-                  <input type="file" accept="audio/*" onChange={(e) => handleFileChange(e, 1)} className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600" />
+                  <label className="leading-loose">Background Audio</label>
+                  <input 
+                    type="file" 
+                    accept="audio/*" 
+                    onChange={(e) => handleFileChange(e, 'background')} 
+                    className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600" 
+                  />
                 </div>
                 <div className="flex flex-col">
-                  <label className="leading-loose">Second Audio File</label>
-                  <input type="file" accept="audio/*" onChange={(e) => handleFileChange(e, 2)} className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600" />
+                  <label className="leading-loose">Real Audio</label>
+                  <input 
+                    type="file" 
+                    accept="audio/*" 
+                    onChange={(e) => handleFileChange(e, 'real')} 
+                    className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600" 
+                  />
                 </div>
               </div>
               <div className="pt-4 flex items-center space-x-4">
-                <button type="submit" disabled={processing} className="bg-blue-500 flex justify-center items-center w-full text-white px-4 py-3 rounded-md focus:outline-none">
+                <button 
+                  type="submit" 
+                  disabled={processing} 
+                  className="bg-blue-500 flex justify-center items-center w-full text-white px-4 py-3 rounded-md focus:outline-none"
+                >
                   {processing ? 'Processing...' : 'Process Audio'}
                 </button>
               </div>
@@ -94,8 +108,11 @@ export default function Home() {
             )}
             {downloadLink && (
               <div className="mt-4">
-                <button onClick={handleDownload} className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
-                  Download Processed Audio (AAC 128k)
+                <button 
+                  onClick={handleDownload} 
+                  className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+                >
+                  Download Processed Audio
                 </button>
               </div>
             )}
