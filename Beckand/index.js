@@ -46,7 +46,7 @@ app.post('/process', upload.array('audio', 2), (req, res) => {
     getDuration(firstAudioPath),
     getDuration(secondAudioPath)
   ]).then(([firstAudioDuration, secondAudioDuration]) => {
-    console.log(`First audio duration: ${firstAudioDuration}, Second audio duration: ${secondAudioDuration}`);
+    // console.log(`First audio duration: ${firstAudioDuration}, Second audio duration: ${secondAudioDuration}`);
 
     // Calculate how many times to repeat the first audio
     const repeatCount = Math.ceil(secondAudioDuration / firstAudioDuration);
@@ -56,7 +56,7 @@ app.post('/process', upload.array('audio', 2), (req, res) => {
     lowerVolume(firstAudioPath, loweredVolumePath)
       .then(() => {
         console.log('Volume lowering finished');
-        console.log(`Repeat count: ${repeatCount}`);
+        // console.log(`Repeat count: ${repeatCount}`);
         // Step 3: Concatenate the first audio based on repeatCount
         return concatenateAudio(loweredVolumePath, concatenatedPath, repeatCount, firstAudioDuration);
       })
@@ -109,7 +109,7 @@ function lowerVolume(inputPath, outputPath) {
 
 function concatenateAudio(inputPath, outputPath, repeatCount, duration) {
   return new Promise((resolve, reject) => {
-    console.log(`Starting concatenation: input=${inputPath}, output=${outputPath}, repeatCount=${repeatCount}, duration=${duration}`);
+    // console.log(`Starting concatenation: input=${inputPath}, output=${outputPath}, repeatCount=${repeatCount}, duration=${duration}`);
     
     // Prepare the complex filter string
     const inputs = Array(repeatCount).fill('[0:a]').join('');
@@ -119,13 +119,13 @@ function concatenateAudio(inputPath, outputPath, repeatCount, duration) {
       .output(outputPath)
       .complexFilter([filterComplex], ['out'])
       .on('start', (commandLine) => {
-        console.log('Spawned FFmpeg with command: ' + commandLine);
+        // console.log('Spawned FFmpeg with command: ' + commandLine);
       })
       .on('progress', (progress) => {
-        console.log('Processing: ' + progress.percent + '% done');
+        // console.log('Processing: ' + progress.percent + '% done');
       })
       .on('end', () => {
-        console.log('Concatenation finished successfully');
+        // console.log('Concatenation finished successfully');
         resolve();
       })
       .on('error', (err, stdout, stderr) => {

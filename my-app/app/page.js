@@ -1,4 +1,4 @@
-// app/page.js
+
 'use client';
 
 import React, { useState } from 'react';
@@ -74,21 +74,22 @@ export default function Home() {
             </div>
             <form onSubmit={handleSubmit} className="divide-y divide-gray-200">
               <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
+               
+                <div className="flex flex-col">
+                  <label className="leading-loose">Story Audio</label>
+                  <input 
+                    type="file" 
+                    accept="audio/*" 
+                    onChange={(e) => handleFileChange(e, 'real')} 
+                    className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600" 
+                  />
+                </div>
                 <div className="flex flex-col">
                   <label className="leading-loose">Background Audio</label>
                   <input 
                     type="file" 
                     accept="audio/*" 
                     onChange={(e) => handleFileChange(e, 'background')} 
-                    className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600" 
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="leading-loose">Real Audio</label>
-                  <input 
-                    type="file" 
-                    accept="audio/*" 
-                    onChange={(e) => handleFileChange(e, 'real')} 
                     className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600" 
                   />
                 </div>
