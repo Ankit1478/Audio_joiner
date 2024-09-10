@@ -172,7 +172,4 @@ app.get('/download/:filename', (req, res) => {
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Uploads directory: ${uploadsDir}`);
-  console.log(`Public directory: ${publicDir}`);
-  console.log(`Output directory: ${outputDir}`);
 });
