@@ -46,24 +46,23 @@ app.post('/process', upload.array('audio', 2), (req, res) => {
     getDuration(firstAudioPath),
     getDuration(secondAudioPath)
   ]).then(([firstAudioDuration, secondAudioDuration]) => {
-    // console.log(`First audio duration: ${firstAudioDuration}, Second audio duration: ${secondAudioDuration}`);
+    console.log(`First audio duration: ${firstAudioDuration}, Second audio duration: ${secondAudioDuration}`);
 
     // Calculate how many times to repeat the first audio
     const repeatCount = Math.ceil(secondAudioDuration / firstAudioDuration);
     
-
-    // Step 2: Lower the volume of the first audio to 50%
+    // Step 2: Lower the volume of the first audio to 60%
     lowerVolume(firstAudioPath, loweredVolumePath)
       .then(() => {
         console.log('Volume lowering finished');
-        // console.log(`Repeat count: ${repeatCount}`);
+        console.log(`Repeat count: ${repeatCount}`);
         // Step 3: Concatenate the first audio based on repeatCount
-        return concatenateAudio(loweredVolumePath, concatenatedPath, repeatCount, firstAudioDuration);
+        return concatenateAudio(loweredVolumePath, concatenatedPath, repeatCount, secondAudioDuration);
       })
       .then(() => {
         console.log('Concatenation finished');
         // Step 4: Merge the concatenated audio with the second audio
-        return mergeAudio(concatenatedPath, secondAudioPath, finalOutputPath);
+        return mergeAudio(concatenatedPath, secondAudioPath, finalOutputPath, secondAudioDuration);
       })
       .then(() => {
         console.log('Processing finished successfully');
@@ -107,25 +106,25 @@ function lowerVolume(inputPath, outputPath) {
   });
 }
 
-function concatenateAudio(inputPath, outputPath, repeatCount, duration) {
+function concatenateAudio(inputPath, outputPath, repeatCount, targetDuration) {
   return new Promise((resolve, reject) => {
-    // console.log(`Starting concatenation: input=${inputPath}, output=${outputPath}, repeatCount=${repeatCount}, duration=${duration}`);
+    console.log(`Starting concatenation: input=${inputPath}, output=${outputPath}, repeatCount=${repeatCount}, targetDuration=${targetDuration}`);
     
     // Prepare the complex filter string
     const inputs = Array(repeatCount).fill('[0:a]').join('');
-    const filterComplex = `${inputs}concat=n=${repeatCount}:v=0:a=1[out]`;
+    const filterComplex = `${inputs}concat=n=${repeatCount}:v=0:a=1[concat];[concat]atrim=0:${targetDuration}[out]`;
     
     ffmpeg(inputPath)
       .output(outputPath)
       .complexFilter([filterComplex], ['out'])
       .on('start', (commandLine) => {
-        // console.log('Spawned FFmpeg with command: ' + commandLine);
+        console.log('Spawned FFmpeg with command: ' + commandLine);
       })
       .on('progress', (progress) => {
-        // console.log('Processing: ' + progress.percent + '% done');
+        console.log('Processing: ' + progress.percent + '% done');
       })
       .on('end', () => {
-        // console.log('Concatenation finished successfully');
+        console.log('Concatenation finished successfully');
         resolve();
       })
       .on('error', (err, stdout, stderr) => {
@@ -138,15 +137,16 @@ function concatenateAudio(inputPath, outputPath, repeatCount, duration) {
   });
 }
 
-function mergeAudio(input1, input2, outputPath) {
+function mergeAudio(input1, input2, outputPath, targetDuration) {
   return new Promise((resolve, reject) => {
     ffmpeg()
       .input(input1)
       .input(input2)
       .complexFilter([
-        '[0:a][1:a]amix=inputs=2:duration=shortest:dropout_transition=0[outa]'
+        '[0:a][1:a]amix=inputs=2:duration=first:dropout_transition=2[outa]',
+        `[outa]atrim=0:${targetDuration}[out]`
       ])
-      .outputOptions('-map [outa]')
+      .outputOptions('-map [out]')
       .outputOptions('-c:a aac')
       .outputOptions('-b:a 128k')
       .output(outputPath)
